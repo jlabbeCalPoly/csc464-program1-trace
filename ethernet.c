@@ -4,17 +4,18 @@
 #include <netinet/ether.h>
 #include <arpa/inet.h>
 #include "ip.h"
+#include "arp.h"
 #include "printers.h"
 
 const int IP_NUMBER = 0x0800;
 const int ARP_NUMBER = 0x0806;
 
 void parseNextFromEthernet(const uint8_t *pktData, uint16_t typeShortHost) {
+    const uint8_t *pktNextData = pktData + 14;
     if (typeShortHost == IP_NUMBER) {
-        const uint8_t *pktNextData = pktData + 14;
         ip(pktNextData);
     } else if (typeShortHost == ARP_NUMBER) {
-        
+        arp(pktNextData);
     }
 }
 
