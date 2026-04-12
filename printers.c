@@ -5,6 +5,15 @@
 #include <arpa/inet.h>
 
 /**
+ * @brief Formats the header print statement
+ * 
+ * @param headerType The specific type (IP, ARP, ...) of the header
+ */
+void formatAndPrintPacketHeader(char *headerType) {
+    fprintf(stdout, "\n\t%s Header\n", headerType);
+}
+
+/**
  * @brief Formats a label and integer and prints the results to stdout
  * 
  * @param field The label/name of the field being printed

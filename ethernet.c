@@ -1,5 +1,4 @@
 #include <stdint.h>
-#include <stdio.h>
 #include <string.h>
 #include <netinet/ether.h>
 #include <arpa/inet.h>
@@ -41,7 +40,7 @@ void printType(uint16_t typeShortHost) {
  * @param pktData Pointer to the beginning of the Ethernet header
  */
 void ethernet(const uint8_t *pktData) {
-    fprintf(stdout, "\n\tEthernet Header\n");
+    formatAndPrintPacketHeader("Ethernet");
 
     // determine the type, save the value in big-endian (so inner PDUs can be parsed)
     uint16_t typeShortNet;

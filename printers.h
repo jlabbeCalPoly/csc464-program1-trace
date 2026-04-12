@@ -7,6 +7,7 @@
 
  #include <stdint.h>
 
+void formatAndPrintPacketHeader(char *headerType);
 void formatAndPrintInt(char *field, int value);
 void formatAndPrintString(char *field, char *value);
 void formatAndPrintChecksum(uint16_t checksum, uint16_t checksumResult);

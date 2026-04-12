@@ -1,7 +1,7 @@
-#include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include "udp.h"
 #include "printers.h"
 #include "checksum.h"
 
@@ -9,13 +9,14 @@ const int ICMP_NUMBER = 0x01;
 const int TCP_NUMBER = 0x06;
 const int UDP_NUMBER = 0x11;
 
-void parseNextFromIP(const uint8_t *pktData, u_int8_t protocol) {
+void parseNextFromIP(const uint8_t *pktData, u_int8_t protocol, u_int8_t headerLenInBytes) {
+    const uint8_t *pktNextData = pktData + headerLenInBytes;
     if (protocol == ICMP_NUMBER) {
         
     } else if (protocol == TCP_NUMBER) {
         
     } else if (protocol == UDP_NUMBER) {
-        
+        udp(pktNextData);
     }
 }
 
@@ -69,7 +70,7 @@ void printIPPDULength(const uint8_t *pktStart) {
  * @param pktData Pointer to the beginning of the IP header
  */
 void ip(const uint8_t *pktData) {
-    printf("\n\tIP Header\n");
+    formatAndPrintPacketHeader("IP");
 
     uint8_t headerLenInWords = pktData[0] & 0x0F;
     // Need bytes, so multiply the number of words by 4 (1 word = 32 bits = 4 bytes))
@@ -87,5 +88,5 @@ void ip(const uint8_t *pktData) {
     formatAndPrintIPAddress("Sender IP", pktData + 12);
     formatAndPrintIPAddress("Dest IP", pktData + 16);
 
-    parseNextFromIP(pktData, protocol);
+    parseNextFromIP(pktData, protocol, headerLenInBytes);
 }
