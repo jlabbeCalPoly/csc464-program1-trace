@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 #include <arpa/inet.h>
 #include "printers.h"
@@ -31,7 +32,7 @@ void printOpcode(const uint8_t *pktStart) {
  * @param pktData Pointer to the beginning of the ARP header
  */
 void arp(const uint8_t *pktData) {
-    formatAndPrintPacketHeader("ARP");
+    fprintf(stdout, "\n\tARP header\n");
 
     printOpcode(pktData + 6);
     formatAndPrintMacAddress("Sender MAC", pktData + 8);

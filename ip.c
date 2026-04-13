@@ -1,32 +1,31 @@
 #include <stdint.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include "icmp.h"
 #include "udp.h"
+#include "tcp.h"
 #include "printers.h"
-#include "checksum.h"
 
 const int ICMP_NUMBER = 0x01;
 const int TCP_NUMBER = 0x06;
 const int UDP_NUMBER = 0x11;
 
-void parseNextFromIP(const uint8_t *pktData, u_int8_t protocol, u_int8_t headerLenInBytes) {
+void parseNextFromIP(
+    const uint8_t *pktData, 
+    uint8_t protocol, 
+    uint16_t totalLengthHost, 
+    uint8_t headerLenInBytes,
+    uint32_t senderIPAddress,
+    uint32_t destIPAddress
+) {
     const uint8_t *pktNextData = pktData + headerLenInBytes;
     if (protocol == ICMP_NUMBER) {
-        
+        icmp(pktNextData);
     } else if (protocol == TCP_NUMBER) {
-        
+        tcp(pktNextData, totalLengthHost - headerLenInBytes, senderIPAddress, destIPAddress, protocol);
     } else if (protocol == UDP_NUMBER) {
         udp(pktNextData);
     }
-}
-
-void printChecksum(const uint8_t *pktData, u_int8_t headerLenInBytes) {
-    uint16_t checksum;
-    memcpy(&checksum, pktData + 10, 2);
-    uint16_t checksumResult = in_cksum((unsigned short *)pktData, headerLenInBytes);
-    uint16_t checksumHost = ntohs(checksum);
-    uint16_t checksumResultHost = ntohs(checksumResult);
-    formatAndPrintChecksum(checksumHost, checksumResultHost);
 }
 
 // Format the ip protocal into its representative string
@@ -57,10 +56,7 @@ void printHeaderLenInBytes(u_int8_t headerLenInBytes) {
     formatAndPrintInt("Header Len (bytes)", headerLenInBytes);
 }
 
-void printIPPDULength(const uint8_t *pktStart) {
-    uint16_t totalLengthNet;
-    memcpy(&totalLengthNet, pktStart, 2);
-    uint16_t totalLengthHost = ntohs(totalLengthNet);
+void printIPPDULength(const uint16_t totalLengthHost) {
     formatAndPrintInt("IP PDU Len", totalLengthHost);
 }
 
@@ -72,6 +68,10 @@ void printIPPDULength(const uint8_t *pktStart) {
 void ip(const uint8_t *pktData) {
     formatAndPrintPacketHeader("IP");
 
+    uint16_t totalLengthNet;
+    memcpy(&totalLengthNet, pktData + 2, 2);
+    uint16_t totalLengthHost = ntohs(totalLengthNet);
+
     uint8_t headerLenInWords = pktData[0] & 0x0F;
     // Need bytes, so multiply the number of words by 4 (1 word = 32 bits = 4 bytes))
     uint8_t headerLenInBytes = headerLenInWords * 4;
@@ -80,13 +80,19 @@ void ip(const uint8_t *pktData) {
     uint8_t protocol;
     memcpy(&protocol, pktData + 9, 1);
 
-    printIPPDULength(pktData + 2);
+    printIPPDULength(totalLengthHost);
     printHeaderLenInBytes(headerLenInBytes);
     printTimeToLive(pktData + 8);
     printProtocol(protocol);
-    printChecksum(pktData, headerLenInBytes);
+    formatAndPrintChecksum(pktData, 10, headerLenInBytes);
+
+    uint32_t senderIPAddress;
+    memcpy(&senderIPAddress, pktData + 12, 4);
     formatAndPrintIPAddress("Sender IP", pktData + 12);
+
+    uint32_t destIPAddress;
+    memcpy(&destIPAddress, pktData + 16, 4);
     formatAndPrintIPAddress("Dest IP", pktData + 16);
 
-    parseNextFromIP(pktData, protocol, headerLenInBytes);
+    parseNextFromIP(pktData, protocol, totalLengthHost, headerLenInBytes, senderIPAddress, destIPAddress);
 }

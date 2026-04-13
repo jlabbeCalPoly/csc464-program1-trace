@@ -5,7 +5,7 @@ CFLAGS = -g -Wall -pedantic -std=gnu99
 all:  trace 
 
 trace: trace.c checksum.c
-	$(CC) $(CFLAGS) -o $@ trace.c ethernet.c arp.c ip.c udp.c checksum.c printers.c $(LIBS)
+	$(CC) $(CFLAGS) -o $@ trace.c ethernet.c arp.c ip.c tcp.c udp.c icmp.c checksum.c printers.c $(LIBS)
 
 clean:
 	rm -f trace

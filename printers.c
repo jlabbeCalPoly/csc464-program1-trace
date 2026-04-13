@@ -3,6 +3,7 @@
 #include <string.h>
 #include <netinet/ether.h>
 #include <arpa/inet.h>
+#include "checksum.h"
 
 /**
  * @brief Formats the header print statement
@@ -19,8 +20,8 @@ void formatAndPrintPacketHeader(char *headerType) {
  * @param field The label/name of the field being printed
  * @param value The integer value to print
  */
-void formatAndPrintInt(char *field, int value) {
-    fprintf(stdout, "\t\t%s: %d\n", field, value);
+void formatAndPrintInt(char *field, uint32_t value) {
+    fprintf(stdout, "\t\t%s: %u\n", field, value);
 }
 
 /**
@@ -50,14 +51,20 @@ void formatChecksumString(char *comparisonResult, uint16_t checksumResult) {
 /**
  * @brief Compares the provided checksum and calculated checksum to determine if a bit-flip occurred
  * 
- * @param checksum The integer value within the checksum field, in big-endian format
- * @param checksumResult The integer value of the calculated checksum, in big-endian format
+ * @param pktData The address of the header
+ * @param pktChecksumOffset Where the checksum information is located, relative to the header start
+ * @param headerLenInBytes The length of the header, in bytes
  */
-void formatAndPrintChecksum(uint16_t checksum, uint16_t checksumResult) {
-    if (checksumResult == 0x0000) {
-        formatChecksumString("Correct", checksum);
+void formatAndPrintChecksum(const uint8_t *pktData, uint8_t pktChecksumOffset, uint32_t length) {
+    uint16_t checksum;
+    memcpy(&checksum, pktData + pktChecksumOffset, 2);
+    uint16_t checksumResultHost = in_cksum((unsigned short *)pktData, length);
+    uint16_t checksumHost = ntohs(checksum);
+
+    if (checksumResultHost == 0x0000) {
+        formatChecksumString("Correct", checksumHost);
     } else {  
-        formatChecksumString("Incorrect", checksum + checksumResult);
+        formatChecksumString("Incorrect", checksumHost);
     }
 }
 
@@ -86,4 +93,31 @@ void formatAndPrintIPAddress(char * field, const uint8_t *pktStart) {
     struct in_addr addr;
     addr.s_addr = ipAddress;
     formatAndPrintString(field, inet_ntoa(addr));
+}
+
+void formatPort(char *field, uint16_t portHost) {
+    // Ports found here: https://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers
+    const int DNS_PORT_NUMBER = 53;
+    const int HTTP_PORT_NUMBER = 80;
+
+    if (portHost == DNS_PORT_NUMBER) {
+        fprintf(stdout, "\t\t%s:  %s\n", field, "DNS");
+    } else if (portHost == HTTP_PORT_NUMBER) {
+        fprintf(stdout, "\t\t%s:  %s\n", field, "HTTP");
+    } else {
+        fprintf(stdout, "\t\t%s:  %u\n", field, portHost);
+    }
+}
+
+/**
+ * @brief Format and print ports
+ * 
+ * @param field The label/name of the field being printed
+ * @param pktStart The address to begin copying bytes from
+ */
+void formatAndPrintPort(char *field, const uint8_t *pktStart) {
+    uint16_t portNet;
+    memcpy(&portNet, pktStart, 2);
+    uint16_t portHost = ntohs(portNet);
+    formatPort(field, portHost);
 }
